@@ -468,7 +468,7 @@ function makeWebGLCabinet() {
     const rimRing = new THREE.Mesh(
       new THREE.ExtrudeGeometry(rimShape, { depth: 0.12, bevelEnabled: false, curveSegments: 16 }),
       new THREE.MeshStandardMaterial({
-        color: 0x14142a, emissive: 0x5a5cff, emissiveIntensity: 1.6,
+        color: 0x14142a, emissive: 0x5a5cff, emissiveIntensity: 2.2,
         roughness: 0.4, metalness: 0.2,
       }));
     rimRing.position.z = -0.04;
@@ -483,9 +483,9 @@ function makeWebGLCabinet() {
         // vivid glossy green: keep envMapIntensity low so the RoomEnvironment
         // clearcoat reflection can't wash the face white (caught in QA
         // 2026-09-20 — the face rendered pale instead of green).
-        color: 0x23b14d, roughness: 0.28, metalness: 0.05,
-        clearcoat: 0.6, clearcoatRoughness: 0.12, envMapIntensity: 0.35,
-        emissive: 0x0b6b28, emissiveIntensity: 0.55,
+        color: 0x1fae4b, roughness: 0.3, metalness: 0.05,
+        clearcoat: 0.5, clearcoatRoughness: 0.15, envMapIntensity: 0.15,
+        emissive: 0x0f8a38, emissiveIntensity: 0.65,
       }));
     btn.position.z = 0.02;
     press.add(btn);
