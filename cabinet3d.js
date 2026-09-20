@@ -465,14 +465,14 @@ function makeWebGLCabinet() {
     // blue/purple illuminated rim (emissive over the 1.0 bloom threshold)
     const rimShape = roundedRectShape(BTN.w + 0.24, BTN.h + 0.24, BTN.corner + 0.10);
     rimShape.holes.push(traceRoundedRect(new THREE.Path(), BTN.w + 0.08, BTN.h + 0.08, BTN.corner + 0.03));
-    const rim = new THREE.Mesh(
+    const rimRing = new THREE.Mesh(
       new THREE.ExtrudeGeometry(rimShape, { depth: 0.12, bevelEnabled: false, curveSegments: 16 }),
       new THREE.MeshStandardMaterial({
         color: 0x14142a, emissive: 0x5a5cff, emissiveIntensity: 1.6,
         roughness: 0.4, metalness: 0.2,
       }));
-    rim.position.z = -0.04;
-    spinGroup.add(rim);
+    rimRing.position.z = -0.04;
+    spinGroup.add(rimRing);
     // the green button itself (presses into the housing)
     const press = new THREE.Group();
     spinGroup.add(press);
@@ -490,7 +490,9 @@ function makeWebGLCabinet() {
     S.spinLabelText = spinLabelFor(currentLang(), window.NN_I18N || {});
     S.spinLabelTex = spinLabelTexture(S.spinLabelText);
     S.spinLabelMat = new THREE.MeshBasicMaterial({ map: S.spinLabelTex, transparent: true, toneMapped: false });
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(BTN.w * 0.94, BTN.h * 0.66), S.spinLabelMat);
+    const label = new THREE.Mesh(
+      new THREE.PlaneGeometry(BTN.w * 0.94, BTN.w * 0.94 * 0.375), // same 1024x384 aspect — no distortion
+      S.spinLabelMat);
     label.position.z = 0.02 + BTN.depth + 0.045 + 0.006;
     press.add(label);
     S.spinBtn = btn; S.spinLabel = label; S.spinPress = press;
