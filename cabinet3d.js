@@ -261,10 +261,10 @@ function makeWebGLCabinet() {
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
 
-    scene.add(new THREE.AmbientLight(0x604038, 0.55));
-    const key = new THREE.PointLight(0xffc080, 60, 40); key.position.set(3, 6, 8); scene.add(key);
-    const rim = new THREE.PointLight(0x4d6aff, 30, 40); rim.position.set(-5, 3, -2); scene.add(rim);
-    const warm = new THREE.PointLight(0xff7a1a, 20, 20); warm.position.set(0, 1.5, 5); scene.add(warm);
+    scene.add(new THREE.AmbientLight(0x604038, 0.38));
+    const key = new THREE.PointLight(0xffc080, 28, 40); key.position.set(3, 6, 8); scene.add(key);
+    const rim = new THREE.PointLight(0x4d6aff, 14, 40); rim.position.set(-5, 3, -2); scene.add(rim);
+    const warm = new THREE.PointLight(0xff7a1a, 9, 20); warm.position.set(0, 1.5, 5); scene.add(warm);
 
     // backdrop
     const bg = new THREE.Mesh(
@@ -571,11 +571,13 @@ function makeWebGLCabinet() {
   function tick(now) {
     const dt = Math.min(0.1, (now - (S.lastT || now)) / 1000); S.lastT = now;
     S.deltas.push(dt * 1000); if (S.deltas.length > 600) S.deltas.shift();
-    // FPS kill-switch: rolling 2s window
+    // FPS kill-switch: rolling 2s window. The frame-count floor is low (>=3)
+    // so the switch still engages on extremely slow software renderers where
+    // a 2s window holds only a handful of frames.
     S.frames2s++;
     if (now - S.t2s > 2000) {
       const fps = S.frames2s / ((now - S.t2s) / 1000);
-      if (S.useComposer && fps < 50 && S.frames2s > 20) {
+      if (S.useComposer && fps < 50 && S.frames2s >= 3) {
         S.useComposer = false;
         for (const sp of S.glowSprites) sp.visible = true;
       }
@@ -753,6 +755,12 @@ function makeWebGLCabinet() {
       S.redBtn.getWorldPosition(v); v.project(S.camera);
       const r = S.canvas.getBoundingClientRect();
       return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+    },
+    // QA hook: perf path state (kill-switch verification)
+    _debugPerf() {
+      const d = S.deltas.filter(v => v > 0 && v < 1000);
+      const mean = d.length ? d.reduce((a, b) => a + b, 0) / d.length : 0;
+      return { useComposer: S.useComposer, fps: mean ? +(1000 / mean).toFixed(1) : 0 };
     },
   };
   return CAB;
