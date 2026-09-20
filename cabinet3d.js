@@ -480,9 +480,12 @@ function makeWebGLCabinet() {
       new THREE.ExtrudeGeometry(roundedRectShape(BTN.w, BTN.h, BTN.corner),
         { depth: BTN.depth, bevelEnabled: true, bevelThickness: 0.045, bevelSize: 0.045, bevelSegments: 3, curveSegments: 16 }),
       new THREE.MeshPhysicalMaterial({
-        color: 0x2bc24e, roughness: 0.22, metalness: 0.05,
-        clearcoat: 1.0, clearcoatRoughness: 0.08, envMapIntensity: 0.8,
-        emissive: 0x0b6b28, emissiveIntensity: 0.4,
+        // vivid glossy green: keep envMapIntensity low so the RoomEnvironment
+        // clearcoat reflection can't wash the face white (caught in QA
+        // 2026-09-20 — the face rendered pale instead of green).
+        color: 0x23b14d, roughness: 0.28, metalness: 0.05,
+        clearcoat: 0.6, clearcoatRoughness: 0.12, envMapIntensity: 0.35,
+        emissive: 0x0b6b28, emissiveIntensity: 0.55,
       }));
     btn.position.z = 0.02;
     press.add(btn);
