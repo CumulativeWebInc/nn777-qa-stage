@@ -176,3 +176,59 @@ Black's add: "fine as long as it's instructions and a translation for this info 
 - Pandora: ADDED — Black's short link `https://pandora.app.link/OIHcaPZYA6b` resolves via its own deep-link metadata to canonical artist page `https://www.pandora.com/artist/that-boy-hi-hat/ARd7j9fggX32x6q` (direct fetch hits Pandora's datacenter bot wall → /restricted, expected). This closes the long-standing Pandora omission (verified direct URL now found).
 - YouTube: Black re-sent the channel in youtube.com/channel form with a ?si= token — same channel ID; the canonical `https://music.youtube.com/channel/UCdlSWhZXKKNPhjXDknHzzpQ` stays on the payout screen. No change.
 - Test hardened: payout-URL checks now scope to the jackpotLinks array (bonus links share domains) and assert each option is the single canonical verified URL, no share tokens.
+
+---
+
+## 3D rebuild (2026-09-20) — Three.js cabinet
+
+### Why rebuilt
+Black rejected the Canvas-2D version: it failed on his iPhone and did not resemble the reference video. The 3D rebuild targets "a product Black would release."
+
+### Root causes (2D failure)
+1. **iPhone WebGL context failure** — the 2D canvas path assumed WebGL availability; on Black's iPhone the context creation failed and the page went blank with no fallback.
+2. **No visible fallback** — when the 3D/WebGL path failed, users saw a dead page instead of a playable DOM fallback.
+3. **Reference mismatch** — flat 2D rendering could not reproduce the chrome-cabinet, neon-marquee, cylindrical-reel look of the reference video.
+
+### What the 3D build does
+- **Three.js 0.160.0 vendored locally** (`game/vendor/three/`) — zero runtime CDN dependencies; import map pins `three` and `three/addons/`.
+- **PBR chrome cabinet** with RoomEnvironment/PMREM reflections for true metallic surfaces.
+- **Dark casino setting** with bokeh sprites; orange TubeGeometry edge lights tracing the cabinet.
+- **NEON NIGHTS marquee** (emissive text) + **JACKPOT sign** with flare modes.
+- **Three cylindrical 10-cell reels** — symbols drawn in texture space, always upright; only cherries, lemons, bells, red 7s (no leaf, per spec).
+- **Seven physical buttons**; red-button raycasting + CDP touch-tap support.
+- **Spin choreography**: staggered start, anticipation slowdown, settle bounce, motion-blur ghosts, camera push-in/relax.
+- **Celebration**: token pour (220 pooled), spark particles, token mound, @CUMULATIVEWEB watermark.
+- **Post**: EffectComposer → RenderPass → UnrealBloomPass → OutputPass; mobile DPR cap 1.5, desktop 2.
+- **Low-FPS kill-switch**: honest 2-second raw-delta sampling; composer disengages below 50 FPS (verified engaging at ~0.4 FPS under SwiftShader).
+- **DOM fallback**: when WebGL is unavailable, a visible (never sr-only) DOM reel cabinet boots and plays; verified 4/4.
+- **Boot watchdog**: 9s timer — if the module graph fails, a visible "Tap to retry" UI appears (verified via network-blocked cabinet3d.js).
+- **Public API** (`window.NN_CABINET`): exactly `init, setRest, spin, celebrate, endCelebrate, setSpins, setSignFlare, onSpinRequest, fpsStats` (enumerable). QA hooks `_debugRedCenter`/`_debugPerf` are non-enumerable; `_debugExposure`, `celebrating`, `settled`, `domFallback` removed.
+
+### Service worker
+- Cache `nn777-v4` (bumped from v3 to force refresh of the 3D assets).
+- Installs on window load; `controllerchange` → reload; `updatefound` → `installed` → update toast with SKIP_WAITING.
+- Cache hygiene: only OK responses cached; 404s never cached (verified with bogus asset).
+- **Real update verified**: deployed byte-different sw.js to staging, `r.update()` → new SW installed → toast surfaced → restored.
+
+### QA receipts (2026-09-20, staging https://cumulativewebinc.github.io/nn777-qa-stage/)
+| Suite | Result |
+|---|---|
+| Standard | **13/13 pass** — boot, WebGL (SwiftShader), zero errors, red-button touch → spin → settle (totalSpins 0→1), kill-switch honest (0.4 FPS, composer off), 41 i18n × 5 bullets, SW v4 active, cache hygiene, 404 not cached, update toast + SKIP_WAITING |
+| Resilience | **6/6 pass** — config.js byte-identical (6,588B, 16 links all resolve), module-failure → retry UI, clean boot, WebGL with non-same-origin blocked, real SW update → toast |
+| Fallback (no WebGL) | **4/4 pass** — boots, WebGL truly absent, DOM fallback visible, spin settles |
+| game-logic.test.js | 50 passed |
+| payout-metrics.test.js | 33 passed |
+| cabinet3d-anim.test.mjs | 48 passed |
+| sw.js | syntax OK |
+
+### Honest limitations
+- **Host has no GPU** (/dev/dri absent, no NVIDIA) — Chromium runs SwiftShader (~0.3–0.6 FPS). This host **cannot prove real-iPhone FPS or ≥55 FPS**. The valid host-side proof is honest low-FPS detection and composer disengagement, both verified.
+- **First-gesture audio**: verified unlocked synchronously in `pointerdown` to the extent Chromium permits; real iOS Safari behavior needs on-device confirmation.
+- **150-spin soak**: deferred to production verification (staging suite covers single-spin settle; soak is a production gate).
+
+### Files
+- `game/cabinet3d.js` (WebGL + DOM cabinets, exact 9-method API)
+- `game/cabinet-anim.js`, `game/cabinet3d-anim.test.mjs`
+- `game/vendor/three/**` (0.160.0, local)
+- `game/.nojekyll`, `game/sw.js` (v4), `game/index.html`
+- `qa/qa3d.js` (standard + resilience), `qa/qa3d-fallback.js`, `qa/deploy.js`, `qa/deploy3d.js`
