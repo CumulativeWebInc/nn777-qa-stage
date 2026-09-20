@@ -678,7 +678,6 @@ function makeWebGLCabinet() {
 
   /* ---------- public API ---------- */
   const CAB = {
-    celebrating: false, settled: S.settled, // compat
     init() {
       S.canvas = document.getElementById('cabinetCanvas');
       S.container = document.getElementById('cabinet');
@@ -724,7 +723,7 @@ function makeWebGLCabinet() {
     },
     spin(rows) { return startSpin(rows); },
     celebrate() {
-      S.celebrating = true; CAB.celebrating = true; S.celebT0 = performance.now();
+      S.celebrating = true; S.celebT0 = performance.now();
       S.settled.length = 0; S.settledCount = 0;
       for (const d of S.tokenData) { d.live = false; }
       for (const d of S.sparkData) { d.life = 0; }
@@ -732,7 +731,7 @@ function makeWebGLCabinet() {
       S.camMode = 'celebrate'; S.camT0 = performance.now();
     },
     endCelebrate() {
-      S.celebrating = false; CAB.celebrating = false;
+      S.celebrating = false;
       S.flareMode = 'off';
       S.camMode = 'relax'; S.camT0 = performance.now();
     },
@@ -757,7 +756,7 @@ function makeWebGLCabinet() {
       const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))];
       return { frames: d.length, avg: +(1000 / mean).toFixed(1), p95: +(1000 / p95).toFixed(1) };
     },
-    // QA hook: red button center in CSS px (for touch-tap tests)
+    // QA hook: red button center in CSS px (for touch-tap tests) — non-enumerable
     _debugRedCenter() {
       if (!S.redBtn || !S.canvas) return null;
       const v = new THREE.Vector3();
@@ -765,18 +764,19 @@ function makeWebGLCabinet() {
       const r = S.canvas.getBoundingClientRect();
       return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
     },
-    // QA hook: perf path state (kill-switch verification)
+    // QA hook: perf path state (kill-switch verification) — non-enumerable
     _debugPerf() {
       const d = S.deltas.filter(v => v > 0 && v < 60000);
       const mean = d.length ? d.reduce((a, b) => a + b, 0) / d.length : 0;
       return { useComposer: S.useComposer, fps: mean ? +(1000 / mean).toFixed(1) : 0 };
     },
-    // QA hook: live exposure/light scaling for visual diagnosis (no redeploy)
-    _debugExposure(e) {
-      if (S.renderer) S.renderer.toneMappingExposure = e;
-      return S.renderer ? S.renderer.toneMappingExposure : -1;
-    },
   };
+  // QA hooks are non-enumerable: hidden from Object.keys() so the public API
+  // surface stays exactly the documented set, but still callable by the harness.
+  for (const k of ["_debugRedCenter", "_debugPerf"]) {
+    const desc = Object.getOwnPropertyDescriptor(CAB, k);
+    if (desc) Object.defineProperty(CAB, k, { ...desc, enumerable: false });
+  }
   return CAB;
 }
 
@@ -815,8 +815,6 @@ function makeDOMCabinet() {
   }
 
   const CAB = {
-    celebrating: false, settled: S.settled,
-    domFallback: true,
     init() {
       const fb = document.querySelector('.cabinet-fallback');
       const cv = $('cabinetCanvas');
@@ -862,7 +860,7 @@ function makeDOMCabinet() {
       });
     },
     celebrate() {
-      S.celebrating = true; CAB.celebrating = true;
+      S.celebrating = true;
       const fb = document.querySelector('.cabinet-fallback');
       if (fb && !fb.querySelector('.dom-tokens')) {
         const t = document.createElement('div');
@@ -876,7 +874,7 @@ function makeDOMCabinet() {
       if (sign) sign.classList.add('flaring');
     },
     endCelebrate() {
-      S.celebrating = false; CAB.celebrating = false;
+      S.celebrating = false;
       const sign = $('jackpotSign');
       if (sign) sign.classList.remove('flaring');
     },
