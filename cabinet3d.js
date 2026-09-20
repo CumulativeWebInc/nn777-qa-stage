@@ -393,7 +393,9 @@ function makeWebGLCabinet() {
     }
 
     // 7 push buttons
-    const BTN_COLORS = [0xd61c2c, 0xefe9da, 0xfacc2a, 0xf5e9dc, 0xefe9da, 0x6a3ec8, 0xfacc2a];
+    // Button colors: cream/yellow kept below the bloom threshold (0.85) so
+    // they hold their hue on the 60fps composer path instead of blowing white.
+    const BTN_COLORS = [0xb01a26, 0xc7a05e, 0xc08f2e, 0xc7a05e, 0xc7a05e, 0x5a34b0, 0xc08f2e];
     const btnY = -0.28, btnZ = 0.86;
     const plate = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.5, 0.3), chromeDark);
     plate.position.set(0, btnY, 0.62); cab.add(plate);
@@ -569,14 +571,19 @@ function makeWebGLCabinet() {
 
   /* ---------- per-frame ---------- */
   function tick(now) {
-    const dt = Math.min(0.1, (now - (S.lastT || now)) / 1000); S.lastT = now;
-    S.deltas.push(dt * 1000); if (S.deltas.length > 600) S.deltas.shift();
-    // FPS kill-switch: rolling 2s window. The frame-count floor is low (>=3)
-    // so the switch still engages on extremely slow software renderers where
-    // a 2s window holds only a handful of frames.
+    const rawDt = (now - (S.lastT || now)) / 1000; S.lastT = now;
+    const dt = Math.min(0.1, rawDt);
+    // deltas keep RAW frame times (unclamped) so _debugPerf reports true fps;
+    // the dt clamp above is only for stable animation math.
+    S.deltas.push(Math.min(1000, rawDt * 1000)); if (S.deltas.length > 600) S.deltas.shift();
+    // FPS kill-switch: evaluate when the sample is meaningful — 2s elapsed OR
+    // 30 frames. The OR matters: on ultra-slow software renderers a 2s window
+    // can hold fewer than 3 frames, and resetting it forever would never let
+    // the switch engage. Waiting for 30 frames bounds the decision instead.
     S.frames2s++;
-    if (now - S.t2s > 2000) {
-      const fps = S.frames2s / ((now - S.t2s) / 1000);
+    const elapsed = now - S.t2s;
+    if (elapsed >= 2000 || S.frames2s >= 30) {
+      const fps = S.frames2s / (elapsed / 1000);
       if (S.useComposer && fps < 50 && S.frames2s >= 3) {
         S.useComposer = false;
         for (const sp of S.glowSprites) sp.visible = true;
