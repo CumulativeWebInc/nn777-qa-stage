@@ -762,6 +762,11 @@ function makeWebGLCabinet() {
       const mean = d.length ? d.reduce((a, b) => a + b, 0) / d.length : 0;
       return { useComposer: S.useComposer, fps: mean ? +(1000 / mean).toFixed(1) : 0 };
     },
+    // QA hook: live exposure/light scaling for visual diagnosis (no redeploy)
+    _debugExposure(e) {
+      if (S.renderer) S.renderer.toneMappingExposure = e;
+      return S.renderer ? S.renderer.toneMappingExposure : -1;
+    },
   };
   return CAB;
 }
