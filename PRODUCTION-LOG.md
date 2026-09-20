@@ -117,3 +117,40 @@ In-browser link check confirmed the rendered payout anchors are byte-identical t
 - Added: `game/cabinet.js` (canvas renderer), `game/cabinet-anim.test.js`, `game/art/redo-rest.png`, `game/art/redo-spin.png`, `game/art/redo-jackpot.png`.
 - Changed: `game/config.js` (leaf retired, bell 3→6), `game/game.js` (canvas spin wiring, no-leaf rests/teaser, NN_GAME handle), `game/index.html` (canvas element, toolbar, sr-only fallback), `game/styles.css` (cabinet/canvas presentation), `game/sw.js` (`nn777-v2`, precaches `cabinet.js` + 3 screenshots), `game/game-logic.test.js` (leaf-retirement proofs).
 - Behavior preserved: 3 stages/9 rounds, Encore round, 41-language how-to, metrics/issuance ledger, score formula/codes, payout screen, listening gates/prizes, mute-pauses-accrual, 200-spin pity cap, all no-gambling/no-cash language.
+
+---
+
+## nn777-v4 — Install UI (all 41 languages), YouTube payout, audio hardening (2026-09-20)
+
+Black's add: "fine as long as it's instructions and a translation for this info too."
+
+**Install UI**
+- New `installModal` in `index.html`: title + steps + PWA honesty note, all rendered from `NN_I18N[<lang>].install` via `applyLang` (English fallback for any locale missing strings).
+- New 📲 Install button in the cabinet toolbar. On iOS (no `beforeinstallprompt`) it is always visible and opens the guided walkthrough (Share → Add to Home Screen → open from home screen); on Android/desktop Chrome/Edge it appears when `beforeinstallprompt` fires and the INSTALL button fires the native prompt; `appinstalled` hides the button.
+- iOS detection: iPhone/iPad/iPod UA or MacIntel+touch. Steps differ by platform: iOS shows the 3-step walkthrough; elsewhere shows the native-prompt hint + "open from home screen" line.
+- Never claims App Store/Play Store availability. The note honestly says PWA — "no app-store download needed."
+- `game.js` exposes `window.NN_INSTALL_TEST = { isIOS, openInstall }` as a QA wiring hook.
+
+**i18n (41/41 locales, 6 keys each)**
+- Added `install: { title, android, ios1, ios2, ios3, note }` to every locale in `game/i18n.js` (40 translated by a dedicated agent into `/tmp/nn777-install-strings.json`, zh-TW added with Taiwan iOS wording "加入主畫面"; en written directly).
+- All 5 how-to bullets per locale preserved (verified: no locale has !=5 bullets).
+
+**Payout**
+- `config.js` `jackpotLinks`: added YouTube `https://www.youtube.com/watch?v=3L5eUDui-00` (verified 2026-09-20: oEmbed "Neon Nights pt. 777" — That Boy Hi Hat - Topic; watch page 200).
+- Tidal: NO URL added. No verified direct Tidal track URL exists anywhere checked (search engines, DistroKid HyperFollow wall, Tidal unauthenticated API 401, Songlink). Guessing a Tidal ID is explicitly forbidden — pending browser-capable verification.
+
+**Audio hardening**
+- Added explicit `touchstart` listener alongside `pointerdown` for first-gesture unlock (some iOS webviews report pointerdown late).
+- `visibilitychange` resume now retries `tryPlay()` up to 5× at 1s intervals after returning from background (covers iOS call/alarm interruptions).
+- Playback-state diagnostics on `window.__nnAudioState` (ready/gestured/unlocked/muted/paused/readyState/error — no PII).
+
+**PWA**
+- New `game/icons/icon-180.png` (resized from icon-192); `apple-touch-icon` now points at it.
+- `manifest.webmanifest`: 180/192/512 normal entries + separate maskable 192/512 (previous `"purpose":"any maskable"` was a single invalid purpose value — split).
+- `game/VERSION.json` (build `nn777-v4`) + `game/CHANGELOG.md` added; `index.html` NN_BUILD and `sw.js` cache tag bumped to `nn777-v4`; `icon-180.png` added to the SW precache list.
+
+**Tests**
+- New `game/install-i18n.test.js`: 1540/1540 pass — 41 locales × 6 non-empty keys, no gambling/store-availability claims, YouTube present, no invented Tidal, manifest icon coverage, VERSION/CHANGELOG/build-tag sync, apple-touch-icon check.
+- Regression: `game-logic.test.js` 50/50, `payout-metrics.test.js` 33/33, `node --check` green on i18n.js + game.js.
+
+**Still owed (not pushed)**: mobile-emulation touch test, Lighthouse PWA audit, 150-spin soak, Tidal verification, Pages deploy + poll, Black's actual-iPhone gate.

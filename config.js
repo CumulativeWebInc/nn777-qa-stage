@@ -77,6 +77,7 @@ const CONFIG = {
     { platform: "Apple Music", url: "https://music.apple.com/us/album/neon-nights-pt-777/1660915130?i=1660915131" },
     { platform: "Amazon Music",url: "https://music.amazon.com/albums/B0BQRC5NY5?marketplaceId=ATVPDKIKX0DER&musicTerritory=US" },
     { platform: "Deezer",      url: "https://www.deezer.com/album/388911647" },
+    { platform: "YouTube",     url: "https://www.youtube.com/watch?v=3L5eUDui-00" }, // verified 2026-09-20 (oEmbed: "Neon Nights pt. 777" — That Boy Hi Hat - Topic)
     { platform: "All platforms", url: "https://distrokid.com/hyperfollow/thatboyhihat/neon-nights-pt-777" },
   ],
 

@@ -1,4 +1,4 @@
-/* 777 Neon Nights — service worker nn777-v3.
+/* 777 Neon Nights — service worker nn777-v4.
    Hardened after the 2026-09-20 iPhone post-mortem:
    1. NEVER caches non-ok responses (the old handler cached 404s, so a phone
       could sit on a broken cabinet.js forever).
@@ -7,7 +7,7 @@
    3. Version handshake: SKIP_WAITING message support so the page's "Update
       available — tap to reload" toast can activate a waiting worker immediately.
    Cache-first for same-origin assets, network-first for navigations. */
-const CACHE = "nn777-v3";
+const CACHE = "nn777-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -33,6 +33,7 @@ const ASSETS = [
   "./vendor/three/addons/shaders/LuminosityHighPassShader.js",
   "./vendor/three/addons/shaders/OutputShader.js",
   "./vendor/three/addons/environments/RoomEnvironment.js",
+  "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./audio/neon-nights-777-128k.mp3",

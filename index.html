@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#140608">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="777 Neon Nights">
@@ -83,6 +83,7 @@
     <div class="cabinet-toolbar">
       <button id="muteBtn" class="icon-btn" aria-label="mute">🔊</button>
       <button id="encoreBtn" class="icon-btn locked" aria-label="encore round">🎰</button>
+      <button id="installBtn" class="icon-btn hidden" aria-label="install">📲</button>
       <select id="langPicker" class="lang-picker" aria-label="language"></select>
     </div>
     <div class="listenbar">
@@ -177,6 +178,20 @@
   </div>
 </div>
 
+<!-- Install guide modal: translated into the player's language. Android/desktop
+     fires the native prompt; iOS gets the Share → Add to Home Screen walkthrough. -->
+<div class="modal hidden" id="installModal">
+  <div class="modal-card">
+    <h2 id="installTitle">Install this game</h2>
+    <ol class="howto" id="installSteps"></ol>
+    <p class="fine" id="installNote"></p>
+    <div class="payout-actions">
+      <button id="installGoBtn" class="spin-btn small hidden">📲 INSTALL</button>
+      <button class="close-btn" data-close="installModal">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast hidden" id="toast"></div>
 
 <!-- Boot-failure recovery UI: shown by the watchdog if the module graph fails
@@ -191,7 +206,7 @@
 
 <!-- Boot reliability: any uncaught error becomes a VISIBLE toast, never a silent blank page. -->
 <script>
-window.NN_BUILD = "nn777-v3";
+window.NN_BUILD = "nn777-v4";
 window.__nnErrors = [];
 window.addEventListener("error", function (e) {
   try {
