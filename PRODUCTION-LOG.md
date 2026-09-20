@@ -154,3 +154,25 @@ Black's add: "fine as long as it's instructions and a translation for this info 
 - Regression: `game-logic.test.js` 50/50, `payout-metrics.test.js` 33/33, `node --check` green on i18n.js + game.js.
 
 **Still owed (not pushed)**: mobile-emulation touch test, Lighthouse PWA audit, 150-spin soak, Tidal verification, Pages deploy + poll, Black's actual-iPhone gate.
+
+### Tidal payout added (2026-09-20)
+- Black himself verified the official That Boy Hi Hat Tidal artist page: `https://tidal.com/artist/28839612` (live HTTP 200, title "That Boy Hi Hat on TIDAL"). Added as the Tidal jackpot option in `game/config.js`; test now asserts the verified artist URL and forbids any guessed `tidal.com/track/` or `/album/` URL.
+- Exact track page for "Neon Nights pt. 777" still pending from a browser hunt; if found, it will replace the artist page.
+
+### Tidal track page verified (2026-09-20)
+- Browser hunt via TIDAL's own search confirmed the exact track page: `https://tidal.com/track/267845274` — "Neon Nights pt. 777" by That Boy Hi Hat, 1-track single, released 2022-12-23, 3:47, Explicit, label CUMULATIVE WEB INC. Replaced the artist page as the Tidal jackpot option in `game/config.js`. Test now requires exactly this URL as the only Tidal URL present.
+- The resolver's Tidal gap for this track is closed.
+
+### YouTube Music payout added (2026-09-20)
+- Black supplied the official YouTube Music artist channel, fetched live and title-confirmed "That Boy Hi Hat": `https://music.youtube.com/channel/UCdlSWhZXKKNPhjXDknHzzpQ` (canonical form, no `?si=` share token). Added as "YouTube Music" alongside the existing YouTube track-video option in `game/config.js`. Test asserts the URL and rejects any share-token URLs. YouTube discovery gap closed.
+
+### Amazon Music artist page (2026-09-20)
+- Black supplied from his own Amazon Music app share: `https://music.amazon.com/artists/B09JFCWZYG` (canonical, no `?ref=` token). Fetch hit Amazon's bot wall, so this is treated as his verified link per his standing rule (his material is ground truth). Replaced the album URL as the Amazon Music jackpot option; old URL recorded in the config comment. Test asserts it is the single Amazon URL present.
+
+### Payout lineup refresh (2026-09-20)
+- Spotify: added artist page `https://open.spotify.com/artist/2f9j460EwjfvjYp3trBcb7` (Black-supplied, canonical, no ?si=/?utm_source=; artist ID matches the verified artist ID). Kept alongside the existing track link.
+- Apple Music: option is now the Black-supplied artist page `https://music.apple.com/us/artist/that-boy-hi-hat/1590210881` (old album URL recorded in comment).
+- Deezer: option is now `https://www.deezer.com/us/artist/148421152` — resolved from Black's short link, verified live as the That Boy Hi Hat artist page (artist ID 148421152 matches the known seed; discography shows Idol or Icon, The Alternative Theory, Post Trap Futurism: The Logo Effect). Canonical, no utm params.
+- Pandora: ADDED — Black's short link `https://pandora.app.link/OIHcaPZYA6b` resolves via its own deep-link metadata to canonical artist page `https://www.pandora.com/artist/that-boy-hi-hat/ARd7j9fggX32x6q` (direct fetch hits Pandora's datacenter bot wall → /restricted, expected). This closes the long-standing Pandora omission (verified direct URL now found).
+- YouTube: Black re-sent the channel in youtube.com/channel form with a ?si= token — same channel ID; the canonical `https://music.youtube.com/channel/UCdlSWhZXKKNPhjXDknHzzpQ` stays on the payout screen. No change.
+- Test hardened: payout-URL checks now scope to the jackpotLinks array (bonus links share domains) and assert each option is the single canonical verified URL, no share tokens.

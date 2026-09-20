@@ -45,8 +45,35 @@ for (const loc of locales) {
 /* ---- payout links: verified entries, no invented Tidal ---- */
 const cfgSrc = fs.readFileSync(path.join(here, "config.js"), "utf8");
 ok(cfgSrc.includes("https://www.youtube.com/watch?v=3L5eUDui-00"), "YouTube payout link present (verified 2026-09-20)");
-ok(/tidal/i.test(cfgSrc) === false, "no Tidal entry without a verified direct URL (never guess)");
-const platforms = ["Spotify", "Apple Music", "Amazon Music", "Deezer", "YouTube", "All platforms"];
+// Tidal: only the TIDAL-search-verified track page may appear. No other Tidal URL.
+ok(cfgSrc.includes("https://tidal.com/track/267845274"), "Tidal payout link present (verified track page 2026-09-20)");
+// Payout-URL checks run against actual `url:` values only (comments may cite
+// retired URLs for provenance). Strip // comments that are NOT part of "://".
+const cfgNoComments = cfgSrc.replace(/([^:])\/\/.*$/gm, "$1");
+// URL checks scope to the jackpotLinks array (bonusLinks share domains).
+const jackpotArr = (cfgNoComments.match(/jackpotLinks:\s*\[([\s\S]*?)\],/) || [null, ""])[1];
+const spotifyUrls = jackpotArr.match(/https?:\/\/open\.spotify\.com\/[^\s"']*/g) || [];
+const appleUrls = jackpotArr.match(/https?:\/\/music\.apple\.com\/[^\s"']*/g) || [];
+const deezerUrls = jackpotArr.match(/https?:\/\/www\.deezer\.com\/[^\s"']*/g) || [];
+const pandoraUrls = jackpotArr.match(/https?:\/\/www\.pandora\.com\/[^\s"']*/g) || [];
+const ytmUrls = jackpotArr.match(/https?:\/\/music\.youtube\.com\/[^\s"']*/g) || [];
+const amazonUrls = jackpotArr.match(/https?:\/\/music\.amazon\.com\/[^\s"']*/g) || [];
+const tidalUrls = jackpotArr.match(/https?:\/\/tidal\.com\/[^\s"']*/g) || [];
+ok(tidalUrls.length === 1 && tidalUrls[0] === "https://tidal.com/track/267845274",
+  `exactly one Tidal URL, the verified track page (found: ${tidalUrls.join(", ") || "none"})`);
+ok(spotifyUrls.includes("https://open.spotify.com/track/4XP56LZjeS0TJUd30kpGSK") &&
+   spotifyUrls.includes("https://open.spotify.com/artist/2f9j460EwjfvjYp3trBcb7") &&
+   spotifyUrls.length === 2 && !/[?&](si|utm_source)=/i.test(spotifyUrls.join(" ")),
+  `Spotify: track + canonical artist page, no share tokens (found: ${spotifyUrls.join(", ") || "none"})`);
+ok(appleUrls.length === 1 && appleUrls[0] === "https://music.apple.com/us/artist/that-boy-hi-hat/1590210881",
+  `Apple Music URL is the Black-supplied artist page (found: ${appleUrls.join(", ") || "none"})`);
+ok(deezerUrls.length === 1 && deezerUrls[0] === "https://www.deezer.com/us/artist/148421152",
+  `Deezer URL is the verified artist page, no utm params (found: ${deezerUrls.join(", ") || "none"})`);
+ok(pandoraUrls.length === 1 && pandoraUrls[0] === "https://www.pandora.com/artist/that-boy-hi-hat/ARd7j9fggX32x6q",
+  `Pandora URL is the resolved canonical artist page (found: ${pandoraUrls.join(", ") || "none"})`);
+ok(ytmUrls.length === 1 && ytmUrls[0] === "https://music.youtube.com/channel/UCdlSWhZXKKNPhjXDknHzzpQ",
+  `YouTube Music URL is canonical with no share token (found: ${ytmUrls.join(", ") || "none"})`);
+const platforms = ["Spotify", "Apple Music", "Amazon Music", "Deezer", "YouTube", "YouTube Music", "Tidal", "Pandora", "All platforms"];
 for (const p of platforms) {
   ok(cfgSrc.includes(`"${p}"`) || cfgSrc.includes(`platform: "${p}"`), `jackpotLinks includes ${p}`);
 }
