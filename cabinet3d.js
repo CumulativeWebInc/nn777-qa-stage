@@ -235,7 +235,7 @@ function makeWebGLCabinet() {
     celebrating: false, celebT0: 0,
     tokens: null, tokenData: [], settledCount: 0, mound: null, sparks: null, sparkData: [],
     spinsLeft: 30, canSpin: true, spinCb: null,
-    deltas: [], lastT: 0, frames2s: 0, t2s: 0,
+    deltas: [], lastT: 0, frames2s: 0, t2s: -1,
     redBtn: null, btnMeshes: [], redPressed: false,
     signMat: null, tubeMat: null, marqueeMat: null, meterTex: null, meterMat: null,
     wmMat: null, glowSprites: [],
@@ -576,16 +576,17 @@ function makeWebGLCabinet() {
     const dt = Math.min(0.1, rawDt);
     // deltas keep RAW frame times (unclamped) so _debugPerf reports true fps;
     // the dt clamp above is only for stable animation math.
-    S.deltas.push(Math.min(1000, rawDt * 1000)); if (S.deltas.length > 600) S.deltas.shift();
-    // FPS kill-switch: evaluate when the sample is meaningful — 2s elapsed OR
-    // 30 frames. The OR matters: on ultra-slow software renderers a 2s window
-    // can hold fewer than 3 frames, and resetting it forever would never let
-    // the switch engage. Waiting for 30 frames bounds the decision instead.
+    S.deltas.push(rawDt * 1000); if (S.deltas.length > 600) S.deltas.shift();
+    // FPS kill-switch: every 2s window, compare the measured fps. Any full 2s
+    // sample is meaningful — even a single frame in 2s (0.5fps) is
+    // definitively below 50. (An earlier floor of >=3 frames/2s accidentally
+    // prevented the switch from EVER engaging on ultra-slow software
+    // renderers, where a 2s window holds 1-2 frames.)
+    if (S.t2s < 0) S.t2s = now;
     S.frames2s++;
-    const elapsed = now - S.t2s;
-    if (elapsed >= 2000 || S.frames2s >= 30) {
-      const fps = S.frames2s / (elapsed / 1000);
-      if (S.useComposer && fps < 50 && S.frames2s >= 3) {
+    if (now - S.t2s >= 2000) {
+      const fps = S.frames2s / ((now - S.t2s) / 1000);
+      if (S.useComposer && fps < 50) {
         S.useComposer = false;
         for (const sp of S.glowSprites) sp.visible = true;
       }
@@ -766,7 +767,7 @@ function makeWebGLCabinet() {
     },
     // QA hook: perf path state (kill-switch verification)
     _debugPerf() {
-      const d = S.deltas.filter(v => v > 0 && v < 1000);
+      const d = S.deltas.filter(v => v > 0 && v < 60000);
       const mean = d.length ? d.reduce((a, b) => a + b, 0) / d.length : 0;
       return { useComposer: S.useComposer, fps: mean ? +(1000 / mean).toFixed(1) : 0 };
     },
