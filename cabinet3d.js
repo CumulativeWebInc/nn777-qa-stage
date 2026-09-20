@@ -29,6 +29,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   clamp01, easeInOutCubic, easeOutCubic, easeOutQuart, settleBounce, cameraScale,
   reelDurations, blurAlpha, reelSpinPlan, planOffsetAt, planSpeed01, planSettleOffset,
+  tokenMound,
   REEL_CELLS, REEL_RADIUS, REEL_WIDTH, REEL_PX_PER_UNIT,
 } from './cabinet-anim.js';
 
