@@ -58,7 +58,7 @@
   /* ---------- audio ---------- */
   const audio = new Audio(C.audioFile);
   audio.loop = true; audio.preload = "auto";
-  let audioReady = false, userGestured = false, triedFull = false;
+  let audioReady = false, userGestured = false, triedFull = false, audioUnlocked = false;
   audio.addEventListener("canplay", () => { audioReady = true; });
   audio.addEventListener("error", () => {
     // Loop file failed (e.g. blocked decode) — fall back to the full-quality file once.
@@ -71,9 +71,19 @@
     if (!userGestured || S.muted || !audioReady) return;
     audio.play().catch(() => {});
   }
-  document.addEventListener("pointerdown", function once() {
-    userGestured = true; tryPlay();
-  }, { once: false });
+  document.addEventListener("pointerdown", () => {
+    userGestured = true;
+    if (!audioUnlocked) {
+      audioUnlocked = true;
+      // First gesture: unlock synchronously INSIDE the handler. Deliberately
+      // not gated on audioReady/canplay — the play() call itself carries the
+      // user activation (the iPhone post-mortem: gating on canplay wasted the
+      // first tap). The element goes audible as soon as data arrives; mute
+      // state is still respected, and visibility/mute pauses are unchanged.
+      if (!S.muted) audio.play().catch(() => {});
+    }
+    tryPlay();
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) audio.pause(); else tryPlay();
   });
