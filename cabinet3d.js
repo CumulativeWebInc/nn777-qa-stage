@@ -279,8 +279,8 @@ function makeWebGLCabinet() {
     );
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, -4.72, 2); scene.add(floor);
 
-    const chrome = new THREE.MeshStandardMaterial({ color: 0xd9d9de, metalness: 1.0, roughness: 0.34, envMapIntensity: 0.55 });
-    const chromeDark = new THREE.MeshStandardMaterial({ color: 0x8a8a92, metalness: 1.0, roughness: 0.42, envMapIntensity: 0.4 });
+    const chrome = new THREE.MeshStandardMaterial({ color: 0xd9d9de, metalness: 1.0, roughness: 0.45, envMapIntensity: 0.35 });
+    const chromeDark = new THREE.MeshStandardMaterial({ color: 0x8a8a92, metalness: 1.0, roughness: 0.5, envMapIntensity: 0.3 });
     const darkPanel = new THREE.MeshStandardMaterial({ color: 0x171114, metalness: 0.5, roughness: 0.5, envMapIntensity: 0.25 });
     const cab = new THREE.Group(); scene.add(cab);
 
@@ -306,7 +306,7 @@ function makeWebGLCabinet() {
     const glowTex = glowTexture('rgba(255,150,60,1)', 'rgba(255,110,20,0.55)');
     for (let i = 0; i < 10; i++) {
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: glowTex, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
+        map: glowTex, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
       }));
       const a = (i / 10) * Math.PI * 2;
       sp.position.set(Math.cos(a) * 2.33, Math.sin(a) * 4.33, 0.8);
@@ -328,7 +328,7 @@ function makeWebGLCabinet() {
 
     // JACKPOT! sign + blue side panels
     const sign = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.56, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0x1c0505, metalness: 0.3, roughness: 0.6 }));
+      new THREE.MeshStandardMaterial({ color: 0x1c0505, metalness: 0.3, roughness: 0.6, envMapIntensity: 0.25 }));
     sign.position.set(0, 2.94, 0.66); cab.add(sign);
     const signFace = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.52),
       new THREE.MeshBasicMaterial({ map: jackpotTexture(), toneMapped: false }));
@@ -400,7 +400,7 @@ function makeWebGLCabinet() {
     for (let i = 0; i < 7; i++) {
       const col = BTN_COLORS[i];
       const bmat = new THREE.MeshStandardMaterial({
-        color: col, metalness: 0.25, roughness: 0.35,
+        color: col, metalness: 0.25, roughness: 0.35, envMapIntensity: 0.3,
         emissive: i === 0 ? 0xd61c2c : 0x000000, emissiveIntensity: i === 0 ? 0.55 : 0,
       });
       const b = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.175, 0.14, 24), bmat);
