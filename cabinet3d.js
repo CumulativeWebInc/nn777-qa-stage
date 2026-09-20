@@ -29,6 +29,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   clamp01, easeInOutCubic, easeOutCubic, easeOutQuart, settleBounce, cameraScale,
   reelDurations, blurAlpha, reelSpinPlan, planOffsetAt, planSpeed01, planSettleOffset,
+  REEL_CELLS, REEL_RADIUS, REEL_WIDTH, REEL_PX_PER_UNIT,
 } from './cabinet-anim.js';
 
 const SYMS = ['seven', 'cherry', 'lemon', 'bell']; // reel symbols only — no leaf
@@ -92,15 +93,25 @@ function drawSymbol2D(x, id, cx, cy, s) {
   x.restore();
 }
 
-/* Reel strip: N cells laid along u (horizontal). cells = symbol ids. */
+/* Reel strip: N cells laid along u (canvas x = around the wheel = screen
+   vertical on the front face). Symbols are drawn rotated +90deg in canvas
+   space so they read upright on screen (canvas +x == screen up after the
+   cylinder's rotation.z = PI/2). Cell canvas size follows the anim module's
+   REEL_* contract so px/unit is uniform (no stretch). */
 function reelStripTexture(cells) {
-  const N = cells.length, cw = 128, chh = 256;
+  const N = cells.length;
+  const cw = Math.round((2 * Math.PI * REEL_RADIUS / N) * REEL_PX_PER_UNIT);
+  const chh = Math.round(REEL_WIDTH * REEL_PX_PER_UNIT);
   const c = cnv(N * cw, chh), x = c.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, chh);
   g.addColorStop(0, '#efe9db'); g.addColorStop(0.5, '#fbf7ec'); g.addColorStop(1, '#ddd5c2');
   x.fillStyle = g; x.fillRect(0, 0, N * cw, chh);
   for (let i = 0; i < N; i++) {
-    drawSymbol2D(x, cells[i], i * cw + cw / 2, chh / 2, 150);
+    x.save();
+    x.translate(i * cw + cw / 2, chh / 2);
+    x.rotate(Math.PI / 2); // symbol-up -> canvas +x -> screen up
+    drawSymbol2D(x, cells[i], 0, 0, Math.min(cw, chh) * 0.8);
+    x.restore();
     x.fillStyle = 'rgba(60,50,40,0.25)'; x.fillRect(i * cw, 0, 2, chh);
   }
   const t = toTex(c);
@@ -264,13 +275,13 @@ function makeWebGLCabinet() {
     // floor
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(30, 14),
-      new THREE.MeshStandardMaterial({ color: 0x0a0808, metalness: 0.7, roughness: 0.4 })
+      new THREE.MeshStandardMaterial({ color: 0x0a0808, metalness: 0.7, roughness: 0.4, envMapIntensity: 0.3 })
     );
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, -4.72, 2); scene.add(floor);
 
-    const chrome = new THREE.MeshStandardMaterial({ color: 0xf2f2f5, metalness: 1.0, roughness: 0.24, envMapIntensity: 1.25 });
-    const chromeDark = new THREE.MeshStandardMaterial({ color: 0x8a8a92, metalness: 1.0, roughness: 0.35, envMapIntensity: 1.0 });
-    const darkPanel = new THREE.MeshStandardMaterial({ color: 0x171114, metalness: 0.5, roughness: 0.5 });
+    const chrome = new THREE.MeshStandardMaterial({ color: 0xd9d9de, metalness: 1.0, roughness: 0.34, envMapIntensity: 0.55 });
+    const chromeDark = new THREE.MeshStandardMaterial({ color: 0x8a8a92, metalness: 1.0, roughness: 0.42, envMapIntensity: 0.4 });
+    const darkPanel = new THREE.MeshStandardMaterial({ color: 0x171114, metalness: 0.5, roughness: 0.5, envMapIntensity: 0.25 });
     const cab = new THREE.Group(); scene.add(cab);
 
     // main body
@@ -307,7 +318,8 @@ function makeWebGLCabinet() {
     mq.position.set(0, 3.72, 0.62); mq.rotation.x = -0.06; cab.add(mq);
     const mqFace = new THREE.Mesh(new THREE.PlaneGeometry(3.86, 0.96),
       new THREE.MeshBasicMaterial({ map: marqueeTexture(), toneMapped: false }));
-    mqFace.material.color.setRGB(2.0, 2.0, 2.0); // HDR push -> selective bloom on letters only
+    // no HDR push on the whole face: only the neon tubes bloom, the dark-red
+    // panel stays dark (a full-face multiplier was washing the cabinet out)
     mqFace.position.set(0, 3.72, 0.78); mqFace.rotation.x = -0.06; cab.add(mqFace);
     S.marqueeMat = mqFace.material;
     const mqTubeCurve = roundedRectPoints(3.94, 1.0, 0.14, 6);
@@ -320,7 +332,6 @@ function makeWebGLCabinet() {
     sign.position.set(0, 2.94, 0.66); cab.add(sign);
     const signFace = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.52),
       new THREE.MeshBasicMaterial({ map: jackpotTexture(), toneMapped: false }));
-    signFace.material.color.setRGB(1.7, 1.7, 1.7);
     signFace.position.set(0, 2.94, 0.78); cab.add(signFace);
     S.signMat = signFace.material;
     for (const sx of [-1, 1]) {
@@ -336,7 +347,7 @@ function makeWebGLCabinet() {
 
     // reel window: dark recess + chrome frame
     const recess = new THREE.Mesh(new THREE.BoxGeometry(4.06, 2.0, 0.5),
-      new THREE.MeshStandardMaterial({ color: 0x0a0a0c, metalness: 0.2, roughness: 0.8 }));
+      new THREE.MeshStandardMaterial({ color: 0x0a0a0c, metalness: 0.2, roughness: 0.8, envMapIntensity: 0.2 }));
     recess.position.set(0, 1.62, 0.35); cab.add(recess);
     const frameMats = chrome;
     const fz = 0.72;
@@ -358,10 +369,12 @@ function makeWebGLCabinet() {
     for (let i = 0; i < 3; i++) {
       const group = new THREE.Group();
       group.position.set(reelXs[i], 1.62, 0.42);
-      const tex = reelStripTexture(S.rest[i].concat(S.rest[i]).slice(0, 24).map((_, k) => S.rest[i][k % 3]));
-      tex.offset.x = 10 + 1.5 / 24;
-      const mat = new THREE.MeshStandardMaterial({ map: tex, metalness: 0.05, roughness: 0.55 });
-      const geo = new THREE.CylinderGeometry(0.86, 0.86, 1.2, 48, 1, true);
+      const restCells = [];
+      for (let k = 0; k < REEL_CELLS; k++) restCells.push(S.rest[i][k % 3]);
+      const tex = reelStripTexture(restCells);
+      tex.offset.x = 10 + 1.5 / REEL_CELLS;
+      const mat = new THREE.MeshStandardMaterial({ map: tex, metalness: 0.05, roughness: 0.55, envMapIntensity: 0.25 });
+      const geo = new THREE.CylinderGeometry(REEL_RADIUS, REEL_RADIUS, REEL_WIDTH, 48, 1, true);
       const mesh = new THREE.Mesh(geo, mat);
       mesh.rotation.z = Math.PI / 2; // axis along X -> symbols scroll vertically
       group.add(mesh);
@@ -402,7 +415,7 @@ function makeWebGLCabinet() {
     const tray = new THREE.Mesh(new THREE.BoxGeometry(4.3, 1.15, 1.1), darkPanel);
     tray.position.set(0, -1.55, 0.35); cab.add(tray);
     const trayGlass = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 0.9),
-      new THREE.MeshStandardMaterial({ color: 0x111114, metalness: 0.9, roughness: 0.08, transparent: true, opacity: 0.6 }));
+      new THREE.MeshStandardMaterial({ color: 0x111114, metalness: 0.9, roughness: 0.08, transparent: true, opacity: 0.6, envMapIntensity: 0.35 }));
     trayGlass.position.set(0, -1.5, 0.92); cab.add(trayGlass);
     S.meterTex = meterTexture(S.spinsLeft);
     S.meterMat = new THREE.MeshBasicMaterial({ map: S.meterTex, toneMapped: false });
@@ -415,7 +428,7 @@ function makeWebGLCabinet() {
 
     // golden token mound (grows during celebrate)
     S.mound = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16),
-      new THREE.MeshStandardMaterial({ color: 0xd9a821, metalness: 0.95, roughness: 0.3, envMapIntensity: 1.4 }));
+      new THREE.MeshStandardMaterial({ color: 0xd9a821, metalness: 0.95, roughness: 0.3, envMapIntensity: 0.7 }));
     S.mound.scale.set(0.001, 0.001, 0.001); S.mound.position.set(0.3, -2.0, 0.4);
     cab.add(S.mound);
 
@@ -589,13 +602,13 @@ function makeWebGLCabinet() {
       updateTokens(dt);
     }
 
-    // sign flare
+    // sign flare (modest: the sign texture is already bright, flare just breathes)
     let flareA = 0;
     if (S.flareMode === 'spin') flareA = 0.65 + 0.35 * Math.abs(Math.sin(now / 90));
     else if (S.flareMode === 'jackpot') flareA = 0.75 + 0.25 * Math.sin(now / 210);
-    const base = 1.7, amp = 2.1;
+    const base = 1.0, amp = 0.55;
     S.signMat.color.setRGB(base + amp * flareA, base + amp * flareA, base + amp * flareA);
-    if (S.bloomPass) S.bloomPass.strength = 0.9 + 0.6 * flareA;
+    if (S.bloomPass) S.bloomPass.strength = 0.9 + 0.5 * flareA;
     // watermark fade
     const wmTarget = S.celebrating ? 0.9 : 0;
     S.wmMat.opacity += (wmTarget - S.wmMat.opacity) * Math.min(1, dt * 5);
@@ -691,10 +704,10 @@ function makeWebGLCabinet() {
         R.rest = rows[i].slice();
         if (R.state === 'idle') {
           const cells = [];
-          for (let k = 0; k < 24; k++) cells.push(rows[i][k % 3]);
+          for (let k = 0; k < REEL_CELLS; k++) cells.push(rows[i][k % 3]);
           R.tex.image = reelStripTexture(cells).image;
           R.tex.needsUpdate = true;
-          R.tex.offset.x = 10 + 1.5 / 24;
+          R.tex.offset.x = 10 + 1.5 / REEL_CELLS;
         }
       }
     },

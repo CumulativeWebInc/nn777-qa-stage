@@ -13,7 +13,14 @@
      The spin starts with the old middle cell (index 1) at front-center and
      scrolls forward to the new middle cell (index N-2).
    - Symbols: "seven" | "cherry" | "lemon" | "bell" only (no leaf). */
-export const REEL_CELLS = 24;
+export const REEL_CELLS = 10;
+/* Renderer geometry contract (single source of truth — cabinet3d.js sizes its
+   strip canvas from these so the settle-bounce px math below stays honest):
+   wheel radius 0.86, width 1.2, 200 canvas px per world unit along the strip. */
+export const REEL_RADIUS = 0.86;
+export const REEL_WIDTH = 1.2;
+export const REEL_PX_PER_UNIT = 200;
+export const REEL_CELL_PX = Math.round((2 * Math.PI * REEL_RADIUS / REEL_CELLS) * REEL_PX_PER_UNIT); // 108
 
 export function clamp01(t) { return t < 0 ? 0 : t > 1 ? 1 : t; }
 export function easeInOutCubic(t) { t = clamp01(t); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
@@ -100,7 +107,7 @@ export function planSpeed01(plan, tMs) {
 export function planSettleOffset(plan, st) {
   const cellFrac = 1 / plan.N;
   const bouncePx = settleBounce(st);
-  const bounceTurns = (bouncePx / 84) * cellFrac; // 84 = logical cell px (CELL)
+  const bounceTurns = (bouncePx / REEL_CELL_PX) * cellFrac; // px -> turns along scroll
   return plan.oEnd + bounceTurns;
 }
 
